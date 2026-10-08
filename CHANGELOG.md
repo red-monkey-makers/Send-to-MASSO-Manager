@@ -1,8 +1,45 @@
 # Changelog
 
-This project is still in release-candidate testing. Version notes below focus on user-visible behavior and protocol fixes, not every internal cleanup commit.
+Version 2 is an unreleased desktop preview. Earlier entries describe the retired v1 development line. Notes focus on user-visible behavior, protocol fixes, and distribution changes.
 
-## v1.8.20 RC - in testing
+## v2 Qt desktop preview — unreleased
+
+### Desktop and workflows
+
+- Replaced the Tkinter interface with a PySide6 workspace containing File queue, Tools & export, and Profiles views, plus a collapsible Activity log.
+- Added drag-and-drop file input, queue ordering, live machine status, and target-path previews. Normal startup begins with an empty queue.
+- Added `--demo` with sample queue entries and disabled controller connections, uploads, and settings writes; added `--screenshot` for preview capture.
+- Kept QR PNG export for selected entries or the whole queue, with overwrite confirmation and checks for duplicate output names.
+- Separated tool-data download from text-file export so users choose when and where to save the result.
+- Preserved existing profile/settings compatibility and the v1 protocol corrections in the extracted `masso_core.py` module.
+- Removed in-app file merging and its supporting code and tests. Combined programs can be posted in Fusion and added as ordinary queue files.
+
+### Reliability fixes
+
+- Added independent queue orchestration that checks upload readiness before each file, requires status received within five seconds, and stops on failure or loss of readiness.
+- Filtered incoming packets by the resolved address of the connected controller, pinned upload sockets to that address, and rejected packets from old listeners after reconnecting.
+- Locked profile switching and editing while connected, and blocked additions and reordering during active queue runs.
+- Preserved multiple selected rows across table refreshes.
+- Kept pending and failed destinations synced to target-folder edits while preserving sending and completed destinations.
+
+### Packaging and cleanup
+
+- Replaced the legacy FLR icon with the Send-2-MASSO cutter-and-arrow emblem, with multiple sizes for desktop use.
+
+- Added `requirements.txt`, `requirements-build.txt`, and a native PyInstaller build helper for Windows `.exe` and macOS `.app` artifacts, with a Windows `--onefile` option.
+- Included the app icon, project license/notices, dependency metadata, and QR image backend in builds.
+- Stored packaged Mac settings in `~/Library/Application Support/Send-to-MASSO Manager/`; source and portable Windows runs retain settings beside the program.
+- Retired the v1.8.20 RC launcher and its logo asset; previous versions remain recoverable from Git history.
+- Removed leftover merge resources and generated caches, and ignored macOS `.DS_Store` files.
+- Updated the README, build/testing guides, interface preview, and third-party notices for v2.
+
+### Validation
+
+- All 31 automated protocol, connection-identity, queue, and desktop tests pass on macOS.
+- Built and smoke-tested the Apple Silicon Mac app and verified its ad-hoc code signature.
+- Real-controller verification of v2 and Windows testing remain outstanding; the Mac build has not been Developer ID signed or notarized for release distribution.
+
+## v1.8.20 RC — historical
 
 - Corrected file-data ACK decoding to use bytes 6-7 as a little-endian 16-bit next-expected index.
 - Removed the v1.8.18 modulo-256 ACK workaround. It restored large-file uploads, but later captures showed the apparent rollover was caused by reading the wrong byte offset/order.
@@ -12,7 +49,7 @@ This project is still in release-candidate testing. Version notes below focus on
 - Changed keepalive and Tool Data request time fields to reuse a connection-time snapshot, matching newer MASSO Link capture analysis.
 - Updated protocol documentation and regression-test targets to reflect the corrected interpretation.
 
-## v1.8.19 RC - in testing
+## v1.8.19 RC — historical
 
 - Fixed queue target-folder behavior.
 - Changing the target MASSO folder after files are already in the queue now updates Pending and Failed queue items.

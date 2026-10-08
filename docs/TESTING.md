@@ -189,8 +189,8 @@ A good report does not have to be long. Something like this is very useful:
 
 ```text
 MASSO G3 Touch, plasma table
-Send-to-MASSO Manager v1.8.20 RC
-Windows ZIP version
+Send-to-MASSO Manager v2 preview
+Windows packaged version
 File: nested_bracket.tap, 938 KB
 Target: \Jobs\Test\
 Expected: upload completes
@@ -199,3 +199,33 @@ App log screenshot attached
 ```
 
 If you know Wireshark and are comfortable using it, attaching a short capture of the failed attempt is even better. If not, the app log and file size are still useful.
+
+
+## Qt v2 interface
+
+Install the dependencies in `requirements.txt`, then run:
+
+```sh
+.venv/bin/python -m unittest discover -s tests -v
+```
+
+Desktop tests use Qt's offscreen platform and fake upload calls. They never connect to a controller. They cover queue editing, folder preview, readiness gating, worker completion events, tool text export, QR PNG generation, and rendering all views. Queue tests cover fault/running/prompt/debounce/stale-status gates, retries, sequential worker handoff, and auto-clear.
+
+For a screenshot without opening a desktop window:
+
+```sh
+QT_QPA_PLATFORM=offscreen .venv/bin/python send_to_masso_v2.py --screenshot /tmp/masso-v2.png
+```
+
+Manual checks before releasing v2:
+
+- Confirm drag-and-drop, multi-file selection, and queue ordering on macOS and Windows.
+- Resize the window and expand the activity log; scroll to reach all queue controls.
+- Verify existing connection profiles load in v2 and profile edits persist after restart.
+- Connect to a real stopped controller and upload a small file, then a batch.
+- Verify a running/faulted/prompt-waiting controller locks uploads and stale status locks the next queued upload.
+- Verify a failed upload leaves later files pending and permits a retry after recovery.
+- Verify target-folder edits change pending/failed entries while preserving completed entries.
+- Scan tools and compare the exported names to the controller; verify QR images load the intended targets.
+
+Connection identity tests verify sender filtering for status/ACK/serial/tool packets, hostname resolution, pinned upload addresses, and rejection of old-listener packets after reconnect. Desktop regression tests cover connected profile locks, blocked queue additions, and multiple-selection preservation. All use fake sockets or clients.

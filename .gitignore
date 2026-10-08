@@ -250,3 +250,9 @@ notes-local/
 
 #Tools Data
 *.txt
+
+# Desktop app dependency manifest
+!requirements*.txt
+
+# macOS folder metadata
+.DS_Store

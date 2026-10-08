@@ -1,328 +1,176 @@
 # Send-to-MASSO Manager
 
-Send-to-MASSO Manager is an independent shop utility for sending G-code files to a MASSO controller over the network.
+Send-to-MASSO Manager is an independent desktop utility for sending G-code files to a MASSO controller over the network. Version 2 uses a Qt interface with an upload queue, live machine status, connection profiles, QR-code export, and read-only tool-data export.
 
-It was built for day-to-day CNC shop use, with a focus on reliable uploads, clear status, and a simple batch/queue workflow. It is not affiliated with or endorsed by MASSO.
+This project is not affiliated with or endorsed by MASSO. Its network protocol is based on packet captures and real-controller testing, rather than official MASSO documentation.
 
 ## Current status
 
-- Current development/test line: **v1.8.20 RC**.
-- Primary tested platform: **Windows**.
-- The Python/Tkinter source should be portable to other desktop operating systems, but non-Windows use needs more tester feedback.
-- The Windows release bundle does **not** require Python.
-- The protocol is reverse engineered from packet captures and real-controller testing, not official MASSO documentation.
+**v2 is a preview release.** Automated protocol, queue, and desktop tests pass on macOS, and the packaged Mac app has been checked for startup. Real-controller verification of v2 and Windows testing remain outstanding.
 
-## Main features
+The legacy v1.8.20 RC launcher has been retired. Its previous version remains in Git history, and its protocol fixes are retained in `masso_core.py`.
 
-- Connects to a MASSO controller by IP address. A resolvable hostname may also work, but IP address is the recommended/default setup.
-- Saves named MASSO connection profiles.
-- Shows live machine status, including stopped/running state, progress, job count, elapsed run time, current/last file, user-prompt/tool-change state, and known alarm/fault states.
-- Blocks uploads while the machine is running, faulted, waiting for user input, or not connected.
-- Supports adding multiple files and sending them one at a time from a queue.
-- Allows queued files to be removed, cleared, or moved up/down before sending.
-- Keeps Pending/Failed queued files synced to the current target folder if the target folder is changed before sending.
-- Leaves Sending/Done queue entries unchanged so the queue still shows where already-sent files actually went.
-- Optional auto-clear of the queue after a successful queue upload.
-- Shows the exact MASSO target path before sending.
-- Accepts `/` or `\` in the target folder field and sends MASSO-style backslashes.
-- Generates MASSO-compatible QR-code PNG files for selected files or the whole queue.
-- Downloads MASSO Tools Data and generates a MASSO-style text file. This is read-only and currently exports tool number plus tool name.
-- Uses a fresh upload socket for each file and has retry/fallback behavior for upload edge cases seen during real controller testing.
-- Uses the corrected 4-byte alignment rule for compact final file-data packets while retaining the full-size fallback.
-- Correctly decodes the 16-bit little-endian file-data ACK counter, including transfers beyond the 255/256 boundary.
-- Supports a custom logo image in the app panel.
-- Stores settings beside the program so the bundle can be kept self-contained.
+![Send-to-MASSO Manager v2 interface in demo mode](docs/ui-v2-preview.png)
 
-## Quick start with the Windows bundle
+The screenshot shows sample files in **demo mode**. Normal startup begins with an empty queue.
 
-The normal Windows release is distributed as a ZIP file, for example:
+## Run from source
 
-```text
-send_to_masso.zip
+Use Python **3.10 or newer**. Development testing used Python 3.12 on macOS. The app uses PySide6 and does not require Tkinter.
+
+From the project folder on macOS or Linux:
+
+```sh
+python -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python send_to_masso_v2.py
 ```
 
-To install:
+On Windows, use PowerShell:
 
-1. Download the ZIP file.
-2. Right-click the ZIP file and choose **Extract All...**.
-3. Extract it to a normal writable folder, for example:
-
-   ```text
-   C:\SendToMASSO\
-   ```
-
-   or:
-
-   ```text
-   C:\Users\<your name>\Desktop\SendToMASSO\
-   ```
-
-4. Open the extracted folder.
-5. Double-click the Send-to-MASSO `.exe` file.
-
-Do not run the program directly from inside the ZIP file. Extract it first.
-
-Avoid installing the portable bundle under `C:\Program Files\` unless you know what you are doing. The app stores its settings beside the program, so a normal writable folder is preferred.
-
-## First-time setup
-
-1. Start Send-to-MASSO Manager.
-2. Enter a profile name, such as:
-
-   ```text
-   Shop MASSO
-   ```
-
-3. Enter the MASSO controller IP address.
-4. Click **Save / Update Profile**.
-5. Click **Connect**.
-6. Wait for the Machine Status panel to show that the controller is connected.
-
-The app saves profiles and settings in:
-
-```text
-send_to_masso.json
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe send_to_masso_v2.py
 ```
 
-This file is stored beside the program. Keep it with the app if you move the folder to another computer.
+To preview the interface with sample queue entries:
 
-## Sending files
-
-1. Connect to the MASSO controller.
-2. Make sure the MASSO is stopped and ready.
-3. Enter the target MASSO folder.
-
-   Examples:
-
-   ```text
-   \
-   \Test\
-   /Test/
-   \Jobs\CustomerA\
-   ```
-
-   Forward slashes are accepted and automatically converted to backslashes.
-
-4. Click **Add Files...**.
-5. Select one or more G-code files.
-6. Review the queue and the MASSO target preview.
-7. Use **Move Up** or **Move Down** if the files need to be sent in a specific order.
-8. Click **Send Queue**.
-
-Files are sent one at a time. If a file fails to send, the queue stops so the problem can be checked before continuing.
-
-### Target folder behavior
-
-The target folder field is treated as the live target for anything not yet sent.
-
-If you add files to the queue and then change the target folder:
-
-- Pending files update to the new target folder.
-- Failed files update to the new target folder so they can be retried somewhere else.
-- Sending/Done files are left alone so the queue still shows where those files actually went.
-
-## Queue controls
-
-- **Add Files...** adds one or more files to the upload queue.
-- **Remove Selected** removes highlighted files from the queue.
-- **Clear Queue** removes all queued files when no upload is running.
-- **Move Up** moves the selected file earlier in the queue.
-- **Move Down** moves the selected file later in the queue.
-- **Send Queue** sends pending files one at a time.
-- **Auto-clear when queue completes** clears completed queue items after a successful queue run.
-
-## Supported file types and names
-
-MASSO normally expects G-code files with one of these extensions:
-
-- `.nc`
-- `.cnc`
-- `.tap`
-- `.eia`
-- `.txt`
-
-The app warns if a file has a different extension. Invalid target characters and non-ASCII names are blocked because they are known to cause problems on MASSO.
-
-Allowed examples:
-
-```text
-part#12.tap
-Clean_flag.tap
-Clean-flag_test.nc
-Bracket Left.nc
-Part-(Rev-A).tap
+```sh
+.venv/bin/python send_to_masso_v2.py --demo
 ```
 
-Problem examples:
+On Windows, substitute `.\.venv\Scripts\python.exe` for `.venv/bin/python`. Demo mode disables controller connections and uploads, and does not save settings.
 
-```text
-café.tap
-part:12.tap
-part?12.tap
+## Build or use a standalone app
+
+Packaged apps include Python and their runtime dependencies. Build on macOS for a Mac `.app`, or on Windows for an `.exe`.
+
+On macOS, after creating the virtual environment:
+
+```sh
+.venv/bin/python -m pip install -r requirements-build.txt
+.venv/bin/python build_desktop.py
+open "dist/Send-to-MASSO Manager.app"
 ```
 
-Avoid these characters in MASSO file/folder names:
+You can copy the complete `.app` to Applications.
+
+On Windows:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
+.\.venv\Scripts\python.exe build_desktop.py
+```
+
+Launch `dist\Send-to-MASSO Manager\Send-to-MASSO Manager.exe`. Keep the entire output folder, including `_internal`, together. If you receive it as a ZIP, extract it to a writable folder before launching.
+
+For a single Windows executable, build with `build_desktop.py --onefile`.
+
+See [Building desktop bundles](docs/BUILDING.md) for packaging, architecture, Mac signing, settings migration, and verification details.
+
+## Connect to a controller
+
+1. Ensure the computer and MASSO can reach each other on the network.
+2. Open **Profiles**, click **New profile**, and enter a profile name and controller address.
+3. Click **Save profile**.
+4. Select the profile in the connection bar and click **Connect**.
+5. Open **File queue** and wait for fresh machine status.
+
+An IP address is the recommended starting point; resolvable hostnames are also supported. Disconnect before switching, editing, or deleting profiles.
+
+## Send files
+
+1. Set the **Target folder**, for example `\Jobs\`, `\Test\`, or `\` for the MASSO root. Forward slashes are accepted and normalized to backslashes.
+2. Click **+ Add files**, or drag local files into the queue.
+3. Review filenames, queue order, and the target-path preview.
+4. Use **Move up** or **Move down** to reorder a selected file if needed.
+5. When the controller is ready, click **Send queue →**.
+
+Files upload one at a time. Uploading does not start machining. If an upload fails, the queue stops; check **Activity log**, resolve the cause, and send again to retry failed and pending files.
+
+To create one combined program, combine and post it in Fusion using your Fusion plugin, then add the resulting file here. The app uploads already-posted files and has no merge function.
+
+### Queue controls
+
+| Control | Behavior |
+| --- | --- |
+| **+ Add files** | Adds local files; unavailable during an active queue run. |
+| **Remove** | Removes selected queue entries. |
+| **Clear** | Clears the queue when no upload is active. |
+| **Move up / Move down** | Changes the selected file's position before sending. |
+| **QR codes…** | Exports codes for selected entries, or the entire queue when none are selected. |
+| **Clear queue after success** | Clears the queue after a successful run. |
+
+Changing the target folder updates **Pending** and **Failed** entries. **Sending** and **Done** entries keep their original destinations. The queue is not saved between app launches.
+
+### Upload readiness
+
+Sending requires a connected, stopped controller with no fault or pending user prompt/tool change, plus machine status received within the last five seconds. Incoming packets must match the connected controller address.
+
+The app checks readiness again between files and stops the queue if the controller becomes unavailable or unsafe for uploads. Missing or empty files and invalid target names also prevent sending.
+
+## File types and names
+
+Expected extensions are `.nc`, `.cnc`, `.tap`, `.eia`, and `.txt`. Other extensions produce a warning.
+
+Use plain ASCII names, such as `Bracket Left.nc`, `part#12.tap`, or `CustomerPart_01.tap`. Non-ASCII names and invalid target characters are blocked. Avoid these characters in file and folder names:
 
 ```text
 : * ? " < > |
 ```
 
-Plain ASCII shop-friendly names are recommended.
+## Export QR codes
 
-## QR-code generation
+1. Add files and set the correct target folder.
+2. Select the entries you want to export. To export every queued entry, clear the selection.
+3. Click **QR codes…** and choose an output folder.
 
-The app can generate MASSO-compatible QR-code PNG files for loading G-code files from the MASSO screen.
+The app creates one PNG per file, named `YourFileName_MASSO_QR.png`. QR codes refer to the MASSO target paths; the corresponding G-code files must exist at those paths on the controller. If files have identical names, select and export them separately to avoid filename collisions.
 
-To generate a QR code for one file:
+## Export tool data
 
-1. Add the file to the queue.
-2. Select the file in the queue.
-3. Click **QR Selected...**.
-4. Choose where to save the PNG file.
+Connect to the controller, open **Tools & export**, and click **Download tools**. Once the download finishes, click **Export text…** to save the list.
 
-To generate QR codes for every queued file:
+This feature reads slots 1–118 and exports populated tool numbers and names. It does not modify controller tool data or decode offsets, diameters, or wear values.
 
-1. Add all desired files to the queue.
-2. Click **QR Queue...**.
-3. Choose an output folder.
-4. The app creates one QR PNG per queued file.
+## Settings
 
-QR files are named like this:
+Profiles, the last target folder, and the auto-clear preference are stored in `send_to_masso.json`.
 
-```text
-YourFileName_MASSO_QR.png
+| Run type | Settings location |
+| --- | --- |
+| Python source | Project folder, beside `masso_core.py` |
+| Windows packaged app | Beside the executable; use a writable folder |
+| macOS packaged app | `~/Library/Application Support/Send-to-MASSO Manager/send_to_masso.json` |
+
+Existing settings from the legacy app remain compatible. To reuse source settings with the Mac app, copy the JSON file into the Application Support directory above. Demo mode does not modify settings.
+
+## Troubleshooting and feedback
+
+**Cannot connect:** check controller power, its network connection, the address, and whether your firewall permits the app's network traffic.
+
+**Send queue is disabled:** check the readiness message below machine status, ensure valid files are queued, and confirm you are running normally rather than with `--demo`.
+
+**A QR code does not load the file:** check that the file exists on MASSO at exactly the folder and filename used when generating the code.
+
+For an issue report, include your operating system, app version, source or packaged launch method, MASSO model and firmware, file size, target folder, expected behavior, actual behavior, and relevant **Activity log** lines. Packet captures are helpful if available, but are not required.
+
+The app does not browse controller folders, delete or rename files on MASSO, or edit controller settings. Unknown alarm codes block uploads. QR behavior and controller compatibility still benefit from real-world testing.
+
+## Development and reference
+
+Run the automated checks from the project folder:
+
+```sh
+.venv/bin/python -m unittest discover -s tests -v
 ```
 
-The QR code uses the MASSO target path shown in the app. Make sure the file is actually uploaded to that same folder on the MASSO.
+Use the Windows virtual-environment executable instead on Windows.
 
-## Tools Data export
-
-The app can request the MASSO tool list and generate a MASSO-style text file.
-
-Current scope:
-
-- Read-only.
-- Requests tool slots 1 through 118.
-- Exports populated tool numbers and tool names.
-- Does not edit or upload MASSO tool data.
-- Does not currently decode offsets, diameters, wear values, or other tool-table fields.
-
-## Custom logo
-
-The logo is easy to customize.
-
-To use your own logo:
-
-1. Create or choose a PNG image.
-2. Name it exactly:
-
-   ```text
-   send_to_masso_logo.png
-   ```
-
-3. Put it in the same folder as the Send-to-MASSO `.exe`.
-4. Restart the app.
-
-The app will load that image automatically. A wide horizontal logo works best.
-
-## Running from Python source
-
-Windows users should normally use the release ZIP.
-
-For source testing, use a recent Python 3 version and run the main script directly, for example:
-
-```text
-python send_to_masso_v1_8_19_rc.py
-```
-
-Tkinter is required. QR-code generation and logo support may also require Python packages such as `qrcode` and `Pillow`, depending on how the release/source environment is set up.
-
-## Reporting a problem
-
-When reporting an upload or connection problem, include:
-
-- MASSO model/controller type and firmware/core version if known.
-- Send-to-MASSO Manager version.
-- Windows bundle or Python source.
-- File size.
-- Target MASSO folder.
-- What you expected to happen.
-- What actually happened.
-- The relevant lines from the app log window. A screenshot is fine if that is easier.
-
-A short Wireshark capture can be very helpful, but only if you already know what Wireshark is and are comfortable using it. It is not required for normal bug reports.
-
-## Basic troubleshooting
-
-### The app does not connect
-
-Check:
-
-- The MASSO is powered on.
-- The MASSO Wi-Fi/network connection is active.
-- The IP address is correct.
-- The PC is on the same network or hotspot as the MASSO.
-- Windows Firewall or security software is not blocking the app.
-
-### Send Queue is disabled
-
-The app only enables sending when:
-
-- It is connected to the MASSO.
-- The machine is stopped.
-- The MASSO is not faulted.
-- The MASSO is not waiting for user input/tool change.
-- At least one valid file is pending in the queue.
-
-### A filename is rejected
-
-Use plain ASCII filenames. Avoid special characters such as:
-
-```text
-: * ? " < > |
-```
-
-Use normal shop-friendly names such as:
-
-```text
-CustomerPart_01.tap
-Bracket-Left.nc
-part#12.tap
-```
-
-### QR code does not load the file on MASSO
-
-Check that:
-
-- The G-code file was uploaded to the same MASSO folder shown in the app.
-- The QR code was generated after the correct target folder was set.
-- The file still exists on the MASSO.
-- The filename and folder names match exactly.
-
-## Notes and limitations
-
-- The app does not browse MASSO folders.
-- The app does not delete, rename, or move files already on the MASSO.
-- The app does not edit MASSO settings.
-- The controller must be reachable on the network before the app can connect.
-- Unknown alarm codes are treated as unsafe and will block uploads, but may display as `Fault / Alarm 0x??` until someone provides a capture or report for that alarm state.
-- QR-code behavior should still be treated as needing more real-world tester feedback.
-- The protocol notes are based on reverse engineering and may change as more captures are collected.
-
-## Developer / tester docs
-
-- [Changelog](CHANGELOG.md)
+- [Build and distribution guide](docs/BUILDING.md)
 - [Testing guide](docs/TESTING.md)
-- [Reverse-engineered protocol notes](docs/PROTOCOL_SPEC.md)
+- [Protocol notes](docs/PROTOCOL_SPEC.md)
+- [Changelog](CHANGELOG.md)
 - [Third-party notices](THIRD_PARTY_NOTICES.md)
-
-## Suggested shop workflow
-
-For a batch of parts:
-
-1. Connect to the MASSO.
-2. Enter the MASSO target folder.
-3. Add all G-code files for the job.
-4. Review the queue and target preview.
-5. Generate QR codes if needed.
-6. Send the queue.
+- [License](LICENSE)

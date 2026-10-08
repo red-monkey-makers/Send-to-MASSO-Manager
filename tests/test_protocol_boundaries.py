@@ -1,7 +1,7 @@
 import queue
 import unittest
 
-from send_to_masso_v1_8_20_rc import (
+from masso_core import (
     MassoClient,
     decode_data_ack_next,
     final_chunk_trailer_len,
