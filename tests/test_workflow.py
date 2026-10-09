@@ -3,7 +3,7 @@ import time
 import unittest
 from pathlib import Path
 
-from masso_core import MassoStatus
+from masso_core import MassoStatus, validate_masso_name_parts
 from masso_workflow import UploadQueue
 
 
@@ -95,13 +95,21 @@ class WorkflowTests(unittest.TestCase):
             self.queue.clear()
 
     def test_invalid_names_missing_and_empty_files_block_start(self):
-        for filename, contents in [("bad?.nc", "G0"), ("empty.nc", "")]:
-            path = Path(self.temp.name) / filename
-            path.write_text(contents)
-            self.queue.items.clear()
-            self.queue.add([path], "\\")
-            with self.assertRaises(ValueError):
-                self.queue.start()
+        # Validate forbidden filename characters without creating a file that
+        # Windows itself rejects. Remote folders never touch the local filesystem.
+        ok, errors, _, _ = validate_masso_name_parts("bad?.nc", "\\")
+        self.assertFalse(ok)
+        self.assertIn("Invalid MASSO character(s): ?", errors)
+        for filename, contents, folder in [("invalid.nc", "G0", "\\bad?\\"),
+                                           ("café.nc", "G0", "\\"),
+                                           ("empty.nc", "", "\\")]:
+            with self.subTest(filename=filename, folder=folder):
+                path = Path(self.temp.name) / filename
+                path.write_text(contents, encoding="utf-8")
+                self.queue.items.clear()
+                self.queue.add([path], folder)
+                with self.assertRaises(ValueError):
+                    self.queue.start()
         self.paths[0].unlink()
         self.queue.items.clear()
         self.queue.add([self.paths[1]], "\\")

@@ -16,6 +16,8 @@ Version 2 is an unreleased desktop preview. Earlier entries describe the retired
 
 ### Reliability fixes
 
+- Made invalid-target tests portable to Windows by checking forbidden filename characters without creating locally invalid files.
+
 - Added independent queue orchestration that checks upload readiness before each file, requires status received within five seconds, and stops on failure or loss of readiness.
 - Filtered incoming packets by the resolved address of the connected controller, pinned upload sockets to that address, and rejected packets from old listeners after reconnecting.
 - Locked profile switching and editing while connected, and blocked additions and reordering during active queue runs.
