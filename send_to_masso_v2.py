@@ -11,7 +11,7 @@ import time
 
 try:
     from PySide6.QtCore import Qt, QTimer, Signal, QItemSelectionModel
-    from PySide6.QtGui import QAction, QColor, QFont, QIcon, QKeySequence
+    from PySide6.QtGui import QAction, QColor, QFont, QIcon, QKeySequence, QPixmap
     from PySide6.QtWidgets import (
         QApplication, QAbstractItemView, QCheckBox, QComboBox, QFileDialog,
         QFormLayout, QFrame, QHBoxLayout, QHeaderView, QLabel, QLineEdit,
@@ -33,7 +33,7 @@ QWidget { color: #202b38; font-size: 13px; }
 QMainWindow, QWidget#workspace { background: #f2f4f5; }
 QWidget#sidebar { background: #17212b; }
 QWidget#sidebar QLabel { color: #b0bdc8; }
-QWidget#sidebar QLabel#brand { color: #ffffff; font-size: 23px; font-weight: 700; }
+QFrame#brandCard { background: #f2f6f6; border-radius: 10px; }
 QWidget#sidebar QPushButton { text-align: left; border: none; background: transparent; color: #bdc8d2; padding: 13px 15px; }
 QWidget#sidebar QPushButton:checked { color: #ffffff; background: #2a3a47; border-left: 3px solid #64c8a9; }
 QWidget#sidebar QPushButton:hover { background: #24323e; }
@@ -194,11 +194,29 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(shell)
         side = QWidget()
         side.setObjectName("sidebar")
-        side.setFixedWidth(188)
+        side.setFixedWidth(220)
         nav = QVBoxLayout(side)
         nav.setContentsMargins(16, 30, 16, 24)
         nav.setSpacing(6)
-        nav.addWidget(label("SEND TO\nMASSO", "brand"))
+        brand_card = QFrame()
+        brand_card.setObjectName("brandCard")
+        brand_layout = QVBoxLayout(brand_card)
+        brand_layout.setContentsMargins(6, 14, 6, 14)
+        brand_logo = QLabel()
+        brand_logo.setAccessibleName("Send-2-MASSO")
+        brand_logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        pixmap = QPixmap(str(RESOURCE_DIR / "assets" / "send-2-masso-logo.png"))
+        if pixmap.isNull():
+            brand_logo.setText("SEND-2-MASSO")
+            brand_logo.setStyleSheet("color: #17212b; font-weight: 700;")
+        else:
+            pixmap = pixmap.scaled(352, 120, Qt.AspectRatioMode.KeepAspectRatio,
+                                   Qt.TransformationMode.SmoothTransformation)
+            pixmap.setDevicePixelRatio(2)
+            brand_logo.setPixmap(pixmap)
+        brand_layout.addWidget(brand_logo)
+        nav.addWidget(brand_card)
+        nav.addSpacing(8)
         nav.addWidget(label("SHOP WORKSPACE", "eyebrow"))
         nav.addSpacing(30)
         self.pages = QStackedWidget()
@@ -392,7 +410,7 @@ class MainWindow(QMainWindow):
         actions.addStretch()
         layout.addLayout(actions)
         layout.addStretch()
-        layout.addWidget(label("Profiles are shared with the original desktop app.", "muted"))
+        layout.addWidget(label("Saved profiles are available each time you open the app.", "muted"))
         self.pages.addWidget(page)
 
     def set_page(self, index):

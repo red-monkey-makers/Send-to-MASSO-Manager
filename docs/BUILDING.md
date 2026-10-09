@@ -110,4 +110,4 @@ QT_QPA_PLATFORM=offscreen \
   --screenshot /tmp/masso-packaged.png
 ```
 
-The script bundles the app icon, project notices, dependency metadata, and the QR/Pillow image backend. Review the dependencies' distribution terms and include required Qt and other third-party license materials before publishing a release.
+The script bundles the app icon, sidebar logo, project notices, dependency metadata, and the QR/Pillow image backend. Review the dependencies' distribution terms and include required Qt and other third-party license materials before publishing a release.

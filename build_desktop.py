@@ -28,6 +28,7 @@ def main():
                "--icon", str(ROOT / "S2M.ico"), "--hidden-import", "qrcode.image.pil"]
     for filename in ("S2M.ico", "LICENSE", "THIRD_PARTY_NOTICES.md"):
         command.extend(["--add-data", f"{ROOT / filename}:."])
+    command.extend(["--add-data", f"{ROOT / 'assets' / 'send-2-masso-logo.png'}:assets"])
     for package in ("PySide6-Essentials", "shiboken6", "qrcode", "Pillow"):
         command.extend(["--copy-metadata", package])
     if sys.platform == "darwin":

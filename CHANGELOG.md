@@ -6,6 +6,8 @@ Version 2 is an unreleased desktop preview. Earlier entries describe the retired
 
 ### Desktop and workflows
 
+- Added the Send-2-MASSO logo in a light sidebar panel, with high-resolution rendering and bundled image assets.
+
 - Replaced the Tkinter interface with a PySide6 workspace containing File queue, Tools & export, and Profiles views, plus a collapsible Activity log.
 - Added drag-and-drop file input, queue ordering, live machine status, and target-path previews. Normal startup begins with an empty queue.
 - Added `--demo` with sample queue entries and disabled controller connections, uploads, and settings writes; added `--screenshot` for preview capture.
