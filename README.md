@@ -44,6 +44,8 @@ On Windows, substitute `.\.venv\Scripts\python.exe` for `.venv/bin/python`. Demo
 
 ## Build or use a standalone app
 
+The [GitHub Actions workflow](.github/workflows/build-desktop.yml) builds Windows x64, Mac Apple Silicon, and Mac Intel ZIPs. After it is pushed to GitHub, open **Actions → Build desktop binaries** to run a build and download its artifacts. See the [workflow instructions](docs/BUILDING.md#github-actions-builds).
+
 Packaged apps include Python and their runtime dependencies. Build on macOS for a Mac `.app`, or on Windows for an `.exe`.
 
 On macOS, after creating the virtual environment:

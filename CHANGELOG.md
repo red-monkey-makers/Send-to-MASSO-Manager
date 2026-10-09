@@ -24,6 +24,8 @@ Version 2 is an unreleased desktop preview. Earlier entries describe the retired
 
 ### Packaging and cleanup
 
+- Added GitHub Actions builds for Windows x64, Mac Apple Silicon, and Mac Intel, with automated tests, packaged startup checks, and downloadable ZIP artifacts.
+
 - Replaced the legacy FLR icon with the Send-2-MASSO cutter-and-arrow emblem, with multiple sizes for desktop use.
 
 - Added `requirements.txt`, `requirements-build.txt`, and a native PyInstaller build helper for Windows `.exe` and macOS `.app` artifacts, with a Windows `--onefile` option.

@@ -1,0 +1,113 @@
+name: Build desktop binaries
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: windows-x64
+            os: windows-2025
+            architecture: x64
+          - target: macos-arm64
+            os: macos-15
+            architecture: arm64
+          - target: macos-x64
+            os: macos-15-intel
+            architecture: x64
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYTHONDONTWRITEBYTECODE: '1'
+      BUILD_TARGET: ${{ matrix.target }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          architecture: ${{ matrix.architecture }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-build.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements-build.txt
+
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Build application
+        run: python build_desktop.py
+
+      - name: Check packaged startup
+        shell: python
+        run: |
+          import os
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          dist = Path("dist")
+          if sys.platform == "win32":
+              executable = dist / "Send-to-MASSO Manager" / "Send-to-MASSO Manager.exe"
+          else:
+              bundle = dist / "Send-to-MASSO Manager.app"
+              subprocess.run(["codesign", "--verify", "--deep", "--strict", str(bundle)], check=True)
+              executable = bundle / "Contents" / "MacOS" / "Send-to-MASSO Manager"
+          screenshot = dist / ("startup-" + os.environ["BUILD_TARGET"] + ".png")
+          subprocess.run([str(executable.resolve()), "--screenshot", str(screenshot.resolve())],
+                         check=True, timeout=60)
+          if not screenshot.is_file() or screenshot.stat().st_size == 0:
+              raise RuntimeError("Packaged app did not produce a startup screenshot")
+
+      - name: Package application
+        shell: python
+        run: |
+          import os
+          from pathlib import Path
+          import shutil
+          import subprocess
+          import sys
+
+          archive = Path("dist") / ("Send-to-MASSO-Manager-" + os.environ["BUILD_TARGET"])
+          if sys.platform == "win32":
+              shutil.make_archive(str(archive), "zip", root_dir="dist", base_dir="Send-to-MASSO Manager")
+          else:
+              # Preserve executable permissions, symbolic links, and the complete .app.
+              subprocess.run(["ditto", "-c", "-k", "--sequesterRsrc", "--keepParent",
+                              "dist/Send-to-MASSO Manager.app", str(archive) + ".zip"], check=True)
+
+      - name: Upload application ZIP and startup preview
+        uses: actions/upload-artifact@v7
+        with:
+          name: Send-to-MASSO-Manager-${{ matrix.target }}
+          path: |
+            dist/Send-to-MASSO-Manager-${{ matrix.target }}.zip
+            dist/startup-${{ matrix.target }}.png
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30

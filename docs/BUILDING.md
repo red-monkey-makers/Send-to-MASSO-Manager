@@ -4,6 +4,29 @@ The Qt v2 app can be packaged with PyInstaller. Users of the packaged applicatio
 
 Build Windows artifacts on Windows and macOS artifacts on macOS. PyInstaller packages the current interpreter and libraries; it does not cross-compile between these operating systems. See the [PyInstaller documentation](https://pyinstaller.org/en/stable/usage.html).
 
+## GitHub Actions builds
+
+The [Build desktop binaries workflow](../.github/workflows/build-desktop.yml) runs on pushes to `main`, pull requests targeting `main`, version tags matching `v*`, and manual dispatch. It uses Python 3.12 and builds three separate targets:
+
+| Artifact | Platform |
+| --- | --- |
+| `Send-to-MASSO-Manager-windows-x64` | Windows x64 executable with its required `_internal` folder |
+| `Send-to-MASSO-Manager-macos-arm64` | Apple Silicon Mac app |
+| `Send-to-MASSO-Manager-macos-x64` | Intel Mac app |
+
+Each job installs the build requirements, runs the automated tests, builds with `build_desktop.py`, and launches the packaged app in screenshot mode. Mac jobs also verify the ad-hoc code signature. A failed check prevents that job from uploading a build.
+
+To start a manual build after the workflow is on GitHub:
+
+1. Open the repository's **Actions** tab.
+2. Select **Build desktop binaries** and click **Run workflow**.
+3. Choose the branch and start the run.
+4. Once a job succeeds, download its artifact from the run's **Artifacts** section.
+
+Extract the downloaded artifact to find the application ZIP and startup screenshot, then extract the application ZIP. Keep the whole Windows application folder together; on Mac, copy the extracted `.app` to Applications if desired.
+
+Artifacts are retained for 30 days. The workflow uploads build artifacts without creating or publishing a GitHub Release. It does not use signing credentials: Windows builds are unsigned, and Mac builds are ad-hoc signed without Developer ID signing or notarization. Real-controller testing is separate from the automated startup check.
+
 ## macOS `.app`
 
 From the project folder:
